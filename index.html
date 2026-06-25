@@ -19,7 +19,7 @@
             <span class="text-2xl">🇯🇵</span>
             <div>
                 <h1 class="text-xl font-bold tracking-tight text-white">Vocab Selection & Production Hub</h1>
-                <p class="text-xs text-slate-400">Offline Ported Client Engine</p>
+                <p class="text-xs text-slate-400">GitHub Pages Automated Cloud Client</p>
             </div>
         </div>
         <nav class="flex gap-2">
@@ -32,39 +32,31 @@
     <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
         
         <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
-            <div class="flex flex-wrap gap-4 items-center justify-between text-xs">
-                <div class="space-y-1">
-                    <span class="font-bold text-slate-300 uppercase tracking-wider block text-sm">📥 Database Ingestion Pools</span>
-                    <p class="text-slate-400">Select or drop any mixture of your exported JSON files. The parser automatically detects structural schemas mapping targets natively.</p>
-                </div>
-                <div>
-                    <label class="bg-red-600 hover:bg-red-500 text-white font-bold px-4 py-2 rounded-lg cursor-pointer transition shadow-xs inline-block">
-                        📁 Upload JSON Files
-                        <input type="file" multiple accept=".json" onchange="autoIngestFiles(event)" class="hidden">
-                    </label>
-                </div>
+            <div class="space-y-1">
+                <span class="font-bold text-slate-300 uppercase tracking-wider block text-sm">📡 Repository Database Stream</span>
+                <p class="text-xs text-slate-400">Asynchronous pipelines are syncing local source references directly from your repository asset trees.</p>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-1">
                 <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-lg text-center">
-                    <span class="text-[10px] text-slate-500 font-bold tracking-wider block uppercase mb-1">Genki 1 & 2</span>
-                    <div id="status-genki" class="text-xs font-semibold text-red-400">🛑 Inactive</div>
+                    <span class="text-[10px] text-slate-500 font-bold tracking-wider block uppercase mb-1">Genki Pools</span>
+                    <div id="status-genki" class="text-xs font-semibold text-amber-500 animate-pulse">⏳ Syncing...</div>
                 </div>
                 <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-lg text-center">
                     <span class="text-[10px] text-slate-500 font-bold tracking-wider block uppercase mb-1">Kaishi 1</span>
-                    <div id="status-kaishi" class="text-xs font-semibold text-red-400">🛑 Inactive</div>
+                    <div id="status-kaishi" class="text-xs font-semibold text-amber-500 animate-pulse">⏳ Syncing...</div>
                 </div>
                 <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-lg text-center">
                     <span class="text-[10px] text-slate-500 font-bold tracking-wider block uppercase mb-1">WaniKani Vocab</span>
-                    <div id="status-wk-vocab" class="text-xs font-semibold text-red-400">🛑 Inactive</div>
+                    <div id="status-wk-vocab" class="text-xs font-semibold text-amber-500 animate-pulse">⏳ Syncing...</div>
                 </div>
                 <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-lg text-center">
                     <span class="text-[10px] text-slate-500 font-bold tracking-wider block uppercase mb-1">JLPT Map</span>
-                    <div id="status-jlpt" class="text-xs font-semibold text-red-400">🛑 Inactive</div>
+                    <div id="status-jlpt" class="text-xs font-semibold text-amber-500 animate-pulse">⏳ Syncing...</div>
                 </div>
                 <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-lg text-center">
                     <span class="text-[10px] text-slate-500 font-bold tracking-wider block uppercase mb-1">Jouyou Map</span>
-                    <div id="status-jouyou" class="text-xs font-semibold text-red-400">🛑 Inactive</div>
+                    <div id="status-jouyou" class="text-xs font-semibold text-amber-500 animate-pulse">⏳ Syncing...</div>
                 </div>
             </div>
         </div>
@@ -73,9 +65,7 @@
             
             <div class="bg-slate-950 border border-slate-800 rounded-xl p-6 space-y-4">
                 <h3 class="text-lg font-bold text-white">📥 Today's Study Inventory</h3>
-                
                 <div id="daily-slots-grid" class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2"></div>
-                
                 <div id="inventory-alert-zone" class="hidden"></div>
             </div>
 
@@ -138,11 +128,11 @@
                 <div class="lg:col-span-3 space-y-4 flex flex-col bg-slate-950 border border-slate-800 rounded-xl p-6">
                     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
                         <h3 class="text-md font-bold text-white" id="pool-title-counter">Unified Vocabulary Pool (Showing 0 matches)</h3>
-                        <button onclick="rerollSeed()" class="px-4 py-1.5 bg-slate-800 text-slate-200 rounded-md text-xs font-semibold hover:bg-slate-700 transition cursor-pointer"> Romano 🔄 Reroll Pool</button>
+                        <button onclick="rerollSeed()" class="px-4 py-1.5 bg-slate-800 text-slate-200 rounded-md text-xs font-semibold hover:bg-slate-700 transition cursor-pointer">🔄 Reroll Pool</button>
                     </div>
 
                     <div id="master-rows-target" class="divide-y divide-slate-800 max-h-[700px] overflow-y-auto custom-scrollbar pr-2">
-                        <p class="text-sm text-slate-500 py-8 text-center">Injest standard dataset files above to generate query targets.</p>
+                        <p class="text-sm text-slate-500 py-8 text-center">Initial asset hydration sync in progress...</p>
                     </div>
                 </div>
             </div>
@@ -151,7 +141,7 @@
         <section id="panel-study" class="tab-panel hidden max-w-2xl mx-auto space-y-6">
             <div class="text-center">
                 <h2 class="text-xl font-bold text-white">🎴 Daily Study Dashboard</h2>
-                <p class="text-xs text-slate-400">Grab your paper layout. Use these targets to produce target written sample frames.</p>
+                <p class="text-xs text-slate-400">Grab your paper layout. Use these targets to produce written sample frames.</p>
             </div>
 
             <div id="study-canvas-container" class="bg-slate-950 border-2 border-red-600 rounded-2xl p-8 text-center shadow-2xl relative">
@@ -205,7 +195,7 @@
     </main>
 
     <script>
-        // Memory pools
+        // Memory storage structures
         const DB = { genki: [], kaishi: [], wanikani: [], jlpt: {}, jouyou: {} };
         let studyLedger = [];
         let activeCardIdx = 0;
@@ -214,12 +204,60 @@
         const DAILY_CAP = 10;
         const OVERFLOW_CAP = 20;
 
+        // Life Cycle Bootstrap Hook
         document.addEventListener("DOMContentLoaded", () => {
             if(localStorage.getItem("study_ledger_native")) {
                 try { studyLedger = JSON.parse(localStorage.getItem("study_ledger_native")); } catch(e) { studyLedger = []; }
             }
             syncInventoryLayout();
+            initializeCloudAssetFetches();
         });
+
+        // REPOSITORY URL FETCH ROUTINES - Replaces Manual FileReader Processing
+        async function fetchStaticPool(url, processorFn, badgeId) {
+            try {
+                // Uses clean URL decoding loops to account for literal spaces in file names
+                const response = await fetch(encodeURI(url));
+                if (!response.ok) throw new Error(`HTTP status ${response.status}`);
+                const data = await response.json();
+                processorFn(data);
+                updateSyncBadge(badgeId, "🟢 Synced");
+            } catch (err) {
+                console.error(`Asset initialization failure on route [${url}]:`, err);
+                updateSyncBadge(badgeId, "❌ Failed", true);
+            }
+        }
+
+        function initializeCloudAssetFetches() {
+            // 1. Fetch Genki 1 and Genki 2 arrays sequentially into the same target partition
+            fetchStaticPool('./Genki 1.json', (data) => { DB.genki = DB.genki.concat(data); processMasterQuery(); }, 'genki');
+            fetchStaticPool('./Genki 2.json', (data) => { DB.genki = DB.genki.concat(data); processMasterQuery(); }, 'genki');
+
+            // 2. Fetch Kaishi Core Table
+            fetchStaticPool('./Kaishi 1.json', (data) => { DB.kaishi = data; processMasterQuery(); }, 'kaishi');
+
+            // 3. Fetch WaniKani Vocabulary Structure
+            fetchStaticPool('./WaniKani Ultimate__Vocabulary.json', (data) => { DB.wanikani = data; processMasterQuery(); }, 'wk-vocab');
+
+            // 4. Fetch Meta Lookups and map directly into tracking dictionary hashes
+            fetchStaticPool('./JLPT_kanji_ALL.json', (data) => {
+                data.forEach(item => { if(item.Kanji) DB.jlpt[item.Kanji] = item.JLPT_level; });
+                processMasterQuery();
+            }, 'jlpt');
+
+            fetchStaticPool('./jouyou.json', (data) => {
+                data.forEach(item => { if(item['New (Shinjitai)']) DB.jouyou[item['New (Shinjitai)']] = item.Grade; });
+                processMasterQuery();
+            }, 'jouyou');
+        }
+
+        function updateSyncBadge(id, text, isError = false) {
+            const el = document.getElementById(`status-${id}`);
+            if (el) {
+                el.innerText = text;
+                el.className = isError ? "text-xs font-bold text-red-500 animate-none" : "text-xs font-bold text-emerald-400 animate-none";
+            }
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
@@ -232,61 +270,6 @@
 
             if(tabId === 'study') initStudyDashboard();
             if(tabId === 'history') renderHistoryLedgerLog();
-        }
-
-        // HEURISTIC SCHEMA DETECTOR - Fixes syntax parsing compilation bug
-        function autoIngestFiles(event) {
-            const files = event.target.files;
-            if (!files.length) return;
-
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const parsed = JSON.parse(e.target.result);
-                        if (!Array.isArray(parsed)) {
-                            console.error("Uploaded file is not a valid JSON array table structure.");
-                            return;
-                        }
-                        
-                        // Sample the first object row item to determine structural fingerprinting keys
-                        if (parsed.length === 0) return;
-                        const baseline = parsed[0];
-
-                        if (baseline.hasOwnProperty('uid') && baseline.hasOwnProperty('english') && baseline.hasOwnProperty('kana')) {
-                            DB.genki = DB.genki.concat(parsed);
-                            updateIngestBadge('genki', DB.genki.length);
-                        } else if (baseline.hasOwnProperty('word') && baseline.hasOwnProperty('word_meaning') && baseline.hasOwnProperty('sentance')) {
-                            DB.kaishi = parsed;
-                            updateIngestBadge('kaishi', DB.kaishi.length);
-                        } else if (baseline.hasOwnProperty('vocab') && baseline.hasOwnProperty('vocab_meaning') && baseline.hasOwnProperty('level')) {
-                            DB.wanikani = DB.wanikani.concat(parsed);
-                            updateIngestBadge('wk-vocab', DB.wanikani.length);
-                        } else if (baseline.hasOwnProperty('JLPT_level') && baseline.hasOwnProperty('Kanji')) {
-                            parsed.forEach(item => { if(item.Kanji) DB.jlpt[item.Kanji] = item.JLPT_level; });
-                            updateIngestBadge('jlpt', Object.keys(DB.jlpt).length);
-                        } else if (baseline.hasOwnProperty('New (Shinjitai)') && baseline.hasOwnProperty('Grade')) {
-                            parsed.forEach(item => { if(item['New (Shinjitai)']) DB.jouyou[item['New (Shinjitai)']] = item.Grade; });
-                            updateIngestBadge('jouyou', Object.keys(DB.jouyou).length);
-                        } else {
-                            console.warn("Unknown schema formatting trace context matrix inside file container:", file.name);
-                        }
-                        
-                        processMasterQuery();
-                    } catch(err) {
-                        alert(`JSON Syntax compiling issue inside file "${file.name}": Please make sure it is valid JSON.`);
-                    }
-                };
-                reader.readAsText(file);
-            });
-        }
-
-        function updateIngestBadge(id, rowCount) {
-            const element = document.getElementById(`status-${id}`);
-            if (element) {
-                element.innerText = `🟢 Loaded (${rowCount})`;
-                element.className = "text-xs font-bold text-emerald-400";
-            }
         }
 
         function getTodayString() {
@@ -432,7 +415,6 @@
             return pool;
         }
 
-        // Rerolls random seeding allocations
         function rerollSeed() {
             shuffleSeed = Math.floor(Math.random() * 100000);
             processMasterQuery();
@@ -626,7 +608,7 @@
                 grid.className = "grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-3 border-t border-slate-900";
 
                 const categories = ['genki', 'kaishi', 'wanikani'];
-                const titles = ['📘 Genki Pool', '功 📙 Kaishi 1 Pool', '🐊 WaniKani Pool'];
+                const titles = ['📘 Genki Pool', '📙 Kaishi 1 Pool', '🐊 WaniKani Pool'];
 
                 categories.forEach((cat, idx) => {
                     const catBlock = document.createElement('div');
