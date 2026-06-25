@@ -88,16 +88,16 @@
                     <div class="space-y-2">
                         <span class="text-xs font-bold text-slate-400 block uppercase">Database Sources</span>
                         <div class="space-y-1.5">
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="src-genki" checked onchange="processMasterQuery()"> Genki</label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="src-kaishi" checked onchange="processMasterQuery()"> Kaishi 1</label>
-                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="src-wanikani" checked onchange="processMasterQuery()"> WaniKani</label>
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="src-genki" checked onchange="forcePoolRegen()"> Genki</label>
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="src-kaishi" checked onchange="forcePoolRegen()"> Kaishi 1</label>
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="src-wanikani" checked onchange="forcePoolRegen()"> WaniKani</label>
                         </div>
                     </div>
 
                     <div class="space-y-2 pt-2 border-t border-slate-800">
                         <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="opt-readings" onchange="processMasterQuery()"> Show Readings (Kana)</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="opt-hide-selected" checked onchange="processMasterQuery()"> Hide Selected Words</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="opt-randomize" checked onchange="processMasterQuery()"> 🎲 Randomize Pool</label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="opt-hide-selected" checked onchange="forcePoolRegen()"> Hide Selected Words</label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="opt-randomize" checked onchange="forcePoolRegen()"> 🎲 Randomize Pool</label>
                     </div>
 
                     <div class="space-y-4 pt-4 border-t border-slate-800">
@@ -105,17 +105,17 @@
                         
                         <div class="space-y-1">
                             <label class="text-xs text-slate-400 block">JLPT Levels (Comma separated)</label>
-                            <input type="text" id="filter-jlpt" oninput="processMasterQuery()" placeholder="e.g., 5, 4" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-white focus:outline-hidden focus:border-slate-500">
+                            <input type="text" id="filter-jlpt" oninput="forcePoolRegen()" placeholder="e.g., 5, 4" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-white focus:outline-hidden focus:border-slate-500">
                         </div>
 
                         <div class="space-y-1">
                             <label class="text-xs text-slate-400 block">Jouyou Grades (Comma separated)</label>
-                            <input type="text" id="filter-jouyou" oninput="processMasterQuery()" placeholder="e.g., 1, 2, S" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-white focus:outline-hidden focus:border-slate-500">
+                            <input type="text" id="filter-jouyou" oninput="forcePoolRegen()" placeholder="e.g., 1, 2, S" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-white focus:outline-hidden focus:border-slate-500">
                         </div>
 
                         <div class="space-y-1">
                             <label class="text-xs text-slate-400 block">Kanji Match Strictness</label>
-                            <select id="filter-strictness" onchange="processMasterQuery()" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-hidden">
+                            <select id="filter-strictness" onchange="forcePoolRegen()" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-hidden">
                                 <option value="lenient">Lenient (At least 1 Kanji matches)</option>
                                 <option value="strict">Strict (All Kanji must match)</option>
                             </select>
@@ -127,12 +127,12 @@
                         
                         <div class="space-y-1">
                             <div class="flex justify-between text-xs"><label class="text-slate-400">Max Kaishi Freq:</label><span id="val-freq">5000</span></div>
-                            <input type="range" id="filter-freq" min="1" max="50000" value="5000" oninput="document.getElementById('val-freq').innerText=this.value; processMasterQuery();" class="w-full accent-red-600 cursor-pointer">
+                            <input type="range" id="filter-freq" min="1" max="50000" value="5000" oninput="document.getElementById('val-freq').innerText=this.value; forcePoolRegen();" class="w-full accent-red-600 cursor-pointer">
                         </div>
 
                         <div class="space-y-1">
                             <label class="text-xs text-slate-400 block">WaniKani Levels (e.g., 1,2,3)</label>
-                            <input type="text" id="filter-wk-level" oninput="processMasterQuery()" placeholder="1-60" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-white focus:outline-hidden focus:border-slate-500">
+                            <input type="text" id="filter-wk-level" oninput="forcePoolRegen()" placeholder="1-60" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-white focus:outline-hidden focus:border-slate-500">
                         </div>
                     </div>
                 </div>
@@ -210,6 +210,7 @@
         // Memory storage structures
         const DB = { genki: [], kaishi: [], wanikani: [], jlpt: {}, jouyou: {} };
         let studyLedger = [];
+        let currentBatchWords = [];
         let activeCardIdx = 0;
         let shuffleSeed = 42;
 
@@ -262,7 +263,6 @@
                 try {
                     const parsedData = JSON.parse(e.target.result);
                     
-                    // Validate ledger shape array attributes
                     if (!Array.isArray(parsedData)) {
                         throw new Error("Target backup structure mapping format mismatch.");
                     }
@@ -277,7 +277,7 @@
                     if (confirm(`Are you sure you want to load this backup? It contains ${parsedData.length} records and will overwrite your current browser session metrics.`)) {
                         localStorage.setItem("study_ledger_native", JSON.stringify(parsedData));
                         reloadLedgerFromStorage();
-                        processMasterQuery();
+                        forcePoolRegen();
                         alert("🎉 Study ledger tracking matrix successfully restored!");
                     }
                 } catch(err) {
@@ -303,19 +303,19 @@
         }
 
         function initializeCloudAssetFetches() {
-            fetchStaticPool('./Genki 1.json', (data) => { DB.genki = DB.genki.concat(data); processMasterQuery(); }, 'genki');
-            fetchStaticPool('./Genki 2.json', (data) => { DB.genki = DB.genki.concat(data); processMasterQuery(); }, 'genki');
-            fetchStaticPool('./Kaishi 1.json', (data) => { DB.kaishi = data; processMasterQuery(); }, 'kaishi');
-            fetchStaticPool('./WaniKani Ultimate__Vocabulary.json', (data) => { DB.wanikani = data; processMasterQuery(); }, 'wk-vocab');
+            fetchStaticPool('./Genki 1.json', (data) => { DB.genki = DB.genki.concat(data); forcePoolRegen(); }, 'genki');
+            fetchStaticPool('./Genki 2.json', (data) => { DB.genki = DB.genki.concat(data); forcePoolRegen(); }, 'genki');
+            fetchStaticPool('./Kaishi 1.json', (data) => { DB.kaishi = data; forcePoolRegen(); }, 'kaishi');
+            fetchStaticPool('./WaniKani Ultimate__Vocabulary.json', (data) => { DB.wanikani = data; forcePoolRegen(); }, 'wk-vocab');
 
             fetchStaticPool('./JLPT_kanji_ALL.json', (data) => {
                 data.forEach(item => { if(item.Kanji) DB.jlpt[item.Kanji] = item.JLPT_level; });
-                processMasterQuery();
+                forcePoolRegen();
             }, 'jlpt');
 
             fetchStaticPool('./jouyou.json', (data) => {
                 data.forEach(item => { if(item['New (Shinjitai)']) DB.jouyou[item['New (Shinjitai)']] = item.Grade; });
-                processMasterQuery();
+                forcePoolRegen();
             }, 'jouyou');
         }
 
@@ -385,6 +385,11 @@
             }).join("");
         }
 
+        function forcePoolRegen() {
+            currentBatchWords = [];
+            processMasterQuery();
+        }
+
         function processMasterQuery() {
             const todayStr = getTodayString();
             const countToday = studyLedger.filter(r => r.selected_date === todayStr).length;
@@ -393,7 +398,6 @@
             const srcKaishi = document.getElementById('src-kaishi').checked;
             const srcWaniKani = document.getElementById('src-wanikani').checked;
             
-            const showReadings = document.getElementById('opt-readings').checked;
             const hideSelected = document.getElementById('opt-hide-selected').checked;
             const randomizePool = document.getElementById('opt-randomize').checked;
 
@@ -404,72 +408,75 @@
             const maxFreq = parseInt(document.getElementById('filter-freq').value, 10);
             const wkLevels = document.getElementById('filter-wk-level').value.split(',').map(s => parseInt(s.trim(), 10)).filter(Boolean);
 
-            let masterPool = [];
+            if (currentBatchWords.length === 0) {
+                let masterPool = [];
 
-            if(srcGenki) {
-                DB.genki.forEach((row, i) => {
-                    masterPool.push({
-                        source: 'Genki', word: row.kanji || row.kana || '',
-                        kana: row.kana || '', english: row.english || '',
-                        uid: row.uid || `g-${i}`, frequency: null, wk_level: null
+                if(srcGenki) {
+                    DB.genki.forEach((row, i) => {
+                        masterPool.push({
+                            source: 'Genki', word: row.kanji || row.kana || '',
+                            kana: row.kana || '', english: row.english || '',
+                            uid: row.uid || `g-${i}`, frequency: null, wk_level: null
+                        });
                     });
-                });
-            }
-            if(srcKaishi) {
-                DB.kaishi.forEach((row, i) => {
-                    masterPool.push({
-                        source: 'Kaishi 1', word: row.word || '',
-                        kana: row.word_reading || '', english: row.word_meaning || '',
-                        uid: row.id || `k-${i}`, frequency: row.frequency ? parseInt(row.frequency, 10) : null, wk_level: null
-                    });
-                });
-            }
-            if(srcWaniKani) {
-                DB.wanikani.forEach((row, i) => {
-                    masterPool.push({
-                        source: 'WaniKani', word: row.vocab || '',
-                        kana: row.reading || '', english: row.vocab_meaning || '',
-                        uid: row.sort || `w-${i}`, frequency: null, wk_level: row.level ? parseInt(row.level, 10) : null
-                    });
-                });
-            }
-
-            masterPool.forEach(item => {
-                item.alreadySelected = studyLedger.some(l => l.word === item.word);
-            });
-
-            let filteredPool = masterPool.filter(item => {
-                if(hideSelected && item.alreadySelected) return false;
-                if(item.source === 'Kaishi 1' && item.frequency && item.frequency > maxFreq) return false;
-                if(item.source === 'WaniKani' && wkLevels.length && (!item.wk_level || !wkLevels.includes(item.wk_level))) return false;
-
-                if(jlptVal.length || jouyouVal.length) {
-                    const kanjiString = extractKanji(item.word);
-                    if(!kanjiString) return false;
-
-                    const checkArray = Array.from(kanjiString).map(char => {
-                        let pass = false;
-                        if(jlptVal.length && DB.jlpt[char] && jlptVal.includes(String(DB.jlpt[char]))) pass = true;
-                        if(jouyouVal.length && DB.jouyou[char] && jouyouVal.includes(String(DB.jouyou[char]))) pass = true;
-                        return pass;
-                    });
-
-                    if(matchMode === 'strict') {
-                        if(!checkArray.every(v => v === true)) return false;
-                    } else {
-                        if(!checkArray.some(v => v === true)) return false;
-                    }
                 }
-                return true;
-            });
+                if(srcKaishi) {
+                    DB.kaishi.forEach((row, i) => {
+                        masterPool.push({
+                            source: 'Kaishi 1', word: row.word || '',
+                            kana: row.word_reading || '', english: row.word_meaning || '',
+                            uid: row.id || `k-${i}`, frequency: row.frequency ? parseInt(row.frequency, 10) : null, wk_level: null
+                        });
+                    });
+                }
+                if(srcWaniKani) {
+                    DB.wanikani.forEach((row, i) => {
+                        masterPool.push({
+                            source: 'WaniKani', word: row.vocab || '',
+                            kana: row.reading || '', english: row.vocab_meaning || '',
+                            uid: row.sort || `w-${i}`, frequency: null, wk_level: row.level ? parseInt(row.level, 10) : null
+                        });
+                    });
+                }
 
-            document.getElementById('pool-title-counter').innerText = `Unified Vocabulary Pool (Showing 25 of ${filteredPool.length} matches)`;
+                masterPool.forEach(item => {
+                    item.alreadySelected = studyLedger.some(l => l.word === item.word);
+                });
 
-            if(randomizePool) {
-                filteredPool = pseudoShuffle(filteredPool, shuffleSeed);
+                let filteredPool = masterPool.filter(item => {
+                    if(hideSelected && item.alreadySelected) return false;
+                    if(item.source === 'Kaishi 1' && item.frequency && item.frequency > maxFreq) return false;
+                    if(item.source === 'WaniKani' && wkLevels.length && (!item.wk_level || !wkLevels.includes(item.wk_level))) return false;
+
+                    if(jlptVal.length || jouyouVal.length) {
+                        const kanjiString = extractKanji(item.word);
+                        if(!kanjiString) return false;
+
+                        const checkArray = Array.from(kanjiString).map(char => {
+                            let pass = false;
+                            if(jlptVal.length && DB.jlpt[char] && jlptVal.includes(String(DB.jlpt[char]))) pass = true;
+                            if(jouyouVal.length && DB.jouyou[char] && jouyouVal.includes(String(DB.jouyou[char]))) pass = true;
+                            return pass;
+                        });
+
+                        if(matchMode === 'strict') {
+                            if(!checkArray.every(v => v === true)) return false;
+                        } else {
+                            if(!checkArray.some(v => v === true)) return false;
+                        }
+                    }
+                    return true;
+                });
+
+                document.getElementById('pool-title-counter').innerText = `Unified Vocabulary Pool (Showing 25 of ${filteredPool.length} matches)`;
+
+                if(randomizePool) {
+                    filteredPool = pseudoShuffle(filteredPool, shuffleSeed);
+                }
+                currentBatchWords = filteredPool.slice(0, 25);
             }
 
-            renderMasterTableStack(filteredPool.slice(0, 25), countToday);
+            renderMasterTableStack(currentBatchWords, countToday);
         }
 
         function pseudoShuffle(arr, seed) {
@@ -486,7 +493,7 @@
 
         function rerollSeed() {
             shuffleSeed = Math.floor(Math.random() * 100000);
-            processMasterQuery();
+            forcePoolRegen();
         }
 
         function renderMasterTableStack(batch, countToday) {
@@ -677,7 +684,6 @@
                 return;
             }
 
-            // Group workspace records by selected_date sorted backwards
             const groupedMaps = {};
             studyLedger.forEach(item => {
                 const d = item.selected_date || 'Legacy/Unknown';
