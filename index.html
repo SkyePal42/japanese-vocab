@@ -32,9 +32,21 @@
     <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
         
         <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
-            <div class="space-y-1">
-                <span class="font-bold text-slate-300 uppercase tracking-wider block text-sm">📡 Repository Database Stream</span>
-                <p class="text-xs text-slate-400">Asynchronous pipelines are syncing local source references directly from your repository asset trees.</p>
+            <div class="flex flex-wrap gap-6 items-start justify-between">
+                <div class="space-y-1 flex-1 min-w-[280px]">
+                    <span class="font-bold text-slate-300 uppercase tracking-wider block text-sm">📡 Repository Database Stream</span>
+                    <p class="text-xs text-slate-400">Asynchronous pipelines are syncing local source references directly from your repository asset trees.</p>
+                </div>
+                
+                <div class="flex items-center gap-3 flex-wrap">
+                    <button onclick="exportTrackingLedger()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-3 py-1.5 rounded-lg text-xs cursor-pointer transition flex items-center gap-1.5">
+                        📥 Export JSON Ledger Backup
+                    </button>
+                    <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold px-3 py-1.5 rounded-lg text-xs cursor-pointer transition flex items-center gap-1.5">
+                        📤 Import JSON Ledger Backup
+                        <input type="file" accept=".json" onchange="importTrackingLedger(event)" class="hidden">
+                    </label>
+                </div>
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-1">
@@ -206,17 +218,80 @@
 
         // Life Cycle Bootstrap Hook
         document.addEventListener("DOMContentLoaded", () => {
-            if(localStorage.getItem("study_ledger_native")) {
-                try { studyLedger = JSON.parse(localStorage.getItem("study_ledger_native")); } catch(e) { studyLedger = []; }
-            }
-            syncInventoryLayout();
+            reloadLedgerFromStorage();
             initializeCloudAssetFetches();
         });
 
-        // REPOSITORY URL FETCH ROUTINES - Replaces Manual FileReader Processing
+        function reloadLedgerFromStorage() {
+            if(localStorage.getItem("study_ledger_native")) {
+                try { studyLedger = JSON.parse(localStorage.getItem("study_ledger_native")); } catch(e) { studyLedger = []; }
+            } else {
+                studyLedger = [];
+            }
+            syncInventoryLayout();
+        }
+
+        // BACKUP MANAGEMENT UTILITIES (EXPORT / IMPORT JSON ENGINE)
+        function exportTrackingLedger() {
+            if (!studyLedger || studyLedger.length === 0) {
+                alert("Your study history ledger is currently empty. There is no backup payload to export yet!");
+                return;
+            }
+            try {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(studyLedger, null, 2));
+                const downloadAnchor = document.createElement('a');
+                const timestamp = new Date().toISOString().split('T')[0];
+                
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `japanese_production_ledger_backup_${timestamp}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            } catch(e) {
+                alert("An error occurred during file data generation sequence.");
+                console.error(e);
+            }
+        }
+
+        function importTrackingLedger(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsedData = JSON.parse(e.target.result);
+                    
+                    // Validate ledger shape array attributes
+                    if (!Array.isArray(parsedData)) {
+                        throw new Error("Target backup structure mapping format mismatch.");
+                    }
+                    
+                    if (parsedData.length > 0) {
+                        const baselineSample = parsedData[0];
+                        if (!baselineSample.hasOwnProperty('word') || !baselineSample.hasOwnProperty('selected_date')) {
+                            throw new Error("File content structural validation fingerprint failed.");
+                        }
+                    }
+
+                    if (confirm(`Are you sure you want to load this backup? It contains ${parsedData.length} records and will merge into or replace current session metrics.`)) {
+                        localStorage.setItem("study_ledger_native", JSON.stringify(parsedData));
+                        reloadLedgerFromStorage();
+                        processMasterQuery();
+                        alert("🎉 Study ledger tracking matrix successfully restored!");
+                    }
+                } catch(err) {
+                    alert(`Import Interruption: Invalid backup format sequence. (${err.message})`);
+                }
+                // Clear target element so the identical file can trigger updates on subsequent selection attempts
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        // REPOSITORY URL FETCH ROUTINES
         async function fetchStaticPool(url, processorFn, badgeId) {
             try {
-                // Uses clean URL decoding loops to account for literal spaces in file names
                 const response = await fetch(encodeURI(url));
                 if (!response.ok) throw new Error(`HTTP status ${response.status}`);
                 const data = await response.json();
@@ -229,17 +304,11 @@
         }
 
         function initializeCloudAssetFetches() {
-            // 1. Fetch Genki 1 and Genki 2 arrays sequentially into the same target partition
             fetchStaticPool('./Genki 1.json', (data) => { DB.genki = DB.genki.concat(data); processMasterQuery(); }, 'genki');
             fetchStaticPool('./Genki 2.json', (data) => { DB.genki = DB.genki.concat(data); processMasterQuery(); }, 'genki');
-
-            // 2. Fetch Kaishi Core Table
             fetchStaticPool('./Kaishi 1.json', (data) => { DB.kaishi = data; processMasterQuery(); }, 'kaishi');
-
-            // 3. Fetch WaniKani Vocabulary Structure
             fetchStaticPool('./WaniKani Ultimate__Vocabulary.json', (data) => { DB.wanikani = data; processMasterQuery(); }, 'wk-vocab');
 
-            // 4. Fetch Meta Lookups and map directly into tracking dictionary hashes
             fetchStaticPool('./JLPT_kanji_ALL.json', (data) => {
                 data.forEach(item => { if(item.Kanji) DB.jlpt[item.Kanji] = item.JLPT_level; });
                 processMasterQuery();
@@ -608,7 +677,7 @@
                 grid.className = "grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-3 border-t border-slate-900";
 
                 const categories = ['genki', 'kaishi', 'wanikani'];
-                const titles = ['📘 Genki Pool', '📙 Kaishi 1 Pool', '🐊 WaniKani Pool'];
+                const titles = ['📘 Genki Pool', '功 📙 Kaishi 1 Pool', '🐊 WaniKani Pool'];
 
                 categories.forEach((cat, idx) => {
                     const catBlock = document.createElement('div');
