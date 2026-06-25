@@ -139,7 +139,7 @@
 
                 <div class="lg:col-span-3 space-y-4 flex flex-col bg-slate-950 border border-slate-800 rounded-xl p-6">
                     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
-                        <h3 class="text-md font-bold text-white" id="pool-title-counter">Unified Vocabulary Pool (Showing 0 matches)</h3>
+                        <h3 class="text-md font-bold text-white" id="pool-title-counter">Unified Vocabulary Pool (Showing 25 of 0 matches)</h3>
                         <button onclick="rerollSeed()" class="px-4 py-1.5 bg-slate-800 text-slate-200 rounded-md text-xs font-semibold hover:bg-slate-700 transition cursor-pointer">🔄 Reroll Pool</button>
                     </div>
 
@@ -274,7 +274,7 @@
                         }
                     }
 
-                    if (confirm(`Are you sure you want to load this backup? It contains ${parsedData.length} records and will merge into or replace current session metrics.`)) {
+                    if (confirm(`Are you sure you want to load this backup? It contains ${parsedData.length} records and will overwrite your current browser session metrics.`)) {
                         localStorage.setItem("study_ledger_native", JSON.stringify(parsedData));
                         reloadLedgerFromStorage();
                         processMasterQuery();
@@ -283,7 +283,6 @@
                 } catch(err) {
                     alert(`Import Interruption: Invalid backup format sequence. (${err.message})`);
                 }
-                // Clear target element so the identical file can trigger updates on subsequent selection attempts
                 event.target.value = '';
             };
             reader.readAsText(file);
@@ -677,7 +676,7 @@
                 grid.className = "grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-3 border-t border-slate-900";
 
                 const categories = ['genki', 'kaishi', 'wanikani'];
-                const titles = ['📘 Genki Pool', '功 📙 Kaishi 1 Pool', '🐊 WaniKani Pool'];
+                const titles = ['📘 Genki Pool', '📙 Kaishi 1 Pool', '🐊 WaniKani Pool'];
 
                 categories.forEach((cat, idx) => {
                     const catBlock = document.createElement('div');
