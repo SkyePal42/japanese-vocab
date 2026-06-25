@@ -477,6 +477,7 @@
             let m = 0x80000000, a = 1103515245, c = 12345;
             for (let i = pool.length - 1; i > 0; i--) {
                 seed = (a * seed + c) % m;
+                seed = (a * seed + c) % m;
                 let j = Math.floor((seed / m) * (i + 1));
                 let temp = pool[i]; pool[i] = pool[j]; pool[j] = temp;
             }
@@ -538,169 +539,182 @@
             });
         }
 
-        function commitWordToLedger(row) {
+        function commitWordToLedger(item) {
             const todayStr = getTodayString();
-            const isDup = studyLedger.some(l => l.word === row.word && l.selected_date === todayStr);
-            if(!isDup) {
-                studyLedger.push({
-                    id: Date.now() + Math.random().toString(36).substr(2, 5),
-                    source_table: row.source, word: row.word,
-                    reading: row.kana, meaning: row.english,
-                    selected_date: todayStr, status: 'Selected'
-                });
-                localStorage.setItem("study_ledger_native", JSON.stringify(studyLedger));
+            const currentTodayCount = studyLedger.filter(r => r.selected_date === todayStr).length;
+
+            if (currentTodayCount >= OVERFLOW_CAP) {
+                alert("Executive protection hard limit has been triggered. Cannot stage additional items today.");
+                return;
             }
+
+            const payload = {
+                source_table: item.source,
+                word: item.word,
+                reading: item.kana,
+                meaning: item.english,
+                selected_date: todayStr,
+                status: 'Selected'
+            };
+
+            studyLedger.push(payload);
+            localStorage.setItem("study_ledger_native", JSON.stringify(studyLedger));
+            
             syncInventoryLayout();
             processMasterQuery();
         }
 
-        // TAB 2 OPERATIONAL CORE ROUTINES
-        let scopedDailyList = [];
+        // STUDY TAB CONTROLLER LOGIC
+        let dailyActiveCards = [];
 
         function initStudyDashboard() {
             const todayStr = getTodayString();
-            scopedDailyList = studyLedger.filter(r => r.selected_date === todayStr);
+            dailyActiveCards = studyLedger.filter(r => r.selected_date === todayStr);
+            activeCardIdx = 0;
 
-            const canvas = document.getElementById('study-canvas-container');
-            if(!scopedDailyList.length) {
-                canvas.innerHTML = `<div class="py-12 text-slate-500 text-sm">💡 Your study inventory container is empty. Stage target entries from the selector panel.</div>`;
-                document.getElementById('study-queue-grid-target').innerHTML = '';
-                return;
-            }
-            if(activeCardIdx >= scopedDailyList.length) activeCardIdx = 0;
-            
-            renderStudyCanvasFocusCard();
+            document.getElementById('peek-reading').checked = false;
+            document.getElementById('peek-meaning').checked = false;
+
+            renderActiveStudyCard();
             renderStudyQueueGrid();
         }
 
-        function renderStudyCanvasFocusCard() {
-            if(!scopedDailyList.length) return;
-            const card = scopedDailyList[activeCardIdx];
+        function renderActiveStudyCard() {
+            const wordEl = document.getElementById('study-card-word');
+            const counterEl = document.getElementById('study-card-counter');
+            const rBox = document.getElementById('box-reading');
+            const mBox = document.getElementById('box-meaning');
 
-            document.getElementById('study-card-meta').innerText = `Now Studying (${activeCardIdx + 1} / ${scopedDailyList.length}) - Source: ${card.source_table}`;
-            document.getElementById('study-card-word').innerText = card.word;
-            
-            document.getElementById('peek-reading').checked = false;
-            document.getElementById('peek-meaning').checked = false;
-            
-            const rBox = document.getElementById('box-reading'); rBox.innerText = card.reading; rBox.classList.add('hidden');
-            const mBox = document.getElementById('box-meaning'); mBox.innerText = card.meaning; mBox.classList.add('hidden');
+            if (!dailyActiveCards.length) {
+                wordEl.innerText = "EMPTY QUEUE";
+                wordEl.className = "text-4xl font-bold text-slate-600 tracking-wide";
+                counterEl.innerText = "0 / 0";
+                rBox.innerText = "";
+                mBox.innerText = "";
+                toggleRevealStudyFields();
+                document.getElementById('btn-study-prev').disabled = true;
+                document.getElementById('btn-study-next').disabled = true;
+                return;
+            }
 
-            document.getElementById('study-card-counter').innerText = `${activeCardIdx + 1} of ${scopedDailyList.length}`;
+            wordEl.className = "text-6xl font-bold font-mono text-white tracking-normal";
+            const currentItem = dailyActiveCards[activeCardIdx];
+            wordEl.innerText = currentItem.word;
+            counterEl.innerText = `${activeCardIdx + 1} / ${dailyActiveCards.length}`;
+
+            rBox.innerText = currentItem.reading || 'N/A';
+            mBox.innerText = currentItem.meaning || 'N/A';
+
+            toggleRevealStudyFields();
+
             document.getElementById('btn-study-prev').disabled = (activeCardIdx === 0);
-            document.getElementById('btn-study-next').disabled = (activeCardIdx >= scopedDailyList.length - 1);
-        }
-
-        function toggleRevealStudyFields() {
-            const rCheck = document.getElementById('peek-reading').checked;
-            const mCheck = document.getElementById('peek-meaning').checked;
-            document.getElementById('box-reading').classList.toggle('hidden', !rCheck);
-            document.getElementById('box-meaning').classList.toggle('hidden', !mCheck);
+            document.getElementById('btn-study-next').disabled = (activeCardIdx === dailyActiveCards.length - 1);
         }
 
         function stepStudyCard(direction) {
-            activeCardIdx += direction;
-            if(activeCardIdx < 0) activeCardIdx = 0;
-            if(activeCardIdx >= scopedDailyList.length) activeCardIdx = scopedDailyList.length - 1;
-            renderStudyCanvasFocusCard();
-            renderStudyQueueGrid();
+            const newIndex = activeCardIdx + direction;
+            if (newIndex >= 0 && newIndex < dailyActiveCards.length) {
+                activeCardIdx = newIndex;
+                document.getElementById('peek-reading').checked = false;
+                document.getElementById('peek-meaning').checked = false;
+                renderActiveStudyCard();
+                renderStudyQueueGrid();
+            }
+        }
+
+        function jumpToStudyCard(idx) {
+            if (idx >= 0 && idx < dailyActiveCards.length) {
+                activeCardIdx = idx;
+                document.getElementById('peek-reading').checked = false;
+                document.getElementById('peek-meaning').checked = false;
+                renderActiveStudyCard();
+                renderStudyQueueGrid();
+            }
+        }
+
+        function toggleRevealStudyFields() {
+            const showR = document.getElementById('peek-reading').checked;
+            const showM = document.getElementById('peek-meaning').checked;
+
+            const rBox = document.getElementById('box-reading');
+            const mBox = document.getElementById('box-meaning');
+
+            rBox.className = showR ? "text-sm bg-slate-900 border border-slate-800 py-1.5 px-3 rounded text-indigo-400 font-mono font-bold" : "hidden";
+            mBox.className = showM ? "text-sm bg-slate-900 border border-slate-800 py-1.5 px-3 rounded text-slate-300 font-medium" : "hidden";
         }
 
         function renderStudyQueueGrid() {
-            const hideGrid = document.getElementById('opt-hide-study-grid').checked;
             const target = document.getElementById('study-queue-grid-target');
+            const isHidden = document.getElementById('opt-hide-study-grid').checked;
             target.innerHTML = '';
 
-            if(hideGrid) {
-                target.innerHTML = `<div class="col-span-full text-xs text-slate-500 italic bg-slate-950 p-3 border border-slate-800 rounded-lg">🧘 Focus Frame Active. Use standard card step inputs.</div>`;
+            if (isHidden || !dailyActiveCards.length) {
                 return;
             }
 
-            scopedDailyList.forEach((row, absoluteIdx) => {
-                const isActive = (absoluteIdx === activeCardIdx);
-                const block = document.createElement('div');
-                block.className = `p-3 rounded-xl border flex flex-col items-center justify-between text-center min-h-[90px] transition cursor-pointer ${
-                    isActive ? 'bg-red-950/40 border-red-600 text-white shadow-md' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                }`;
-
-                block.onclick = () => {
-                    activeCardIdx = absoluteIdx;
-                    renderStudyCanvasFocusCard();
-                    renderStudyQueueGrid();
-                };
-
-                block.innerHTML = `
-                    <span class="text-xl font-bold font-mono text-white block">${row.word}</span>
-                    <span class="text-[9px] uppercase font-bold tracking-wider text-slate-600">${row.source_table}</span>
-                    <div class="flex gap-1 w-full pt-1.5 text-[10px]" onclick="event.stopPropagation();">
-                        <button onclick="alert('🔮 Reading: ${row.reading}')" class="flex-1 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded py-0.5 cursor-pointer">🔮</button>
-                        <button onclick="alert('📢 Meaning: ${row.meaning}')" class="flex-1 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded py-0.5 cursor-pointer">📢</button>
-                    </div>
-                `;
-                target.appendChild(block);
+            dailyActiveCards.forEach((item, idx) => {
+                const itemBtn = document.createElement('button');
+                itemBtn.onclick = () => jumpToStudyCard(idx);
+                
+                if (idx === activeCardIdx) {
+                    itemBtn.className = "bg-red-600 border border-red-500 text-white font-bold p-3 rounded-xl text-center text-md shadow-md cursor-pointer transition transform scale-102";
+                } else {
+                    itemBtn.className = "bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 p-3 rounded-xl text-center text-sm font-medium cursor-pointer transition hover:bg-slate-900";
+                }
+                
+                itemBtn.innerText = item.word;
+                target.appendChild(itemBtn);
             });
         }
 
+        // HISTORY TAB LEDGER RENDER ENGINE
         function renderHistoryLedgerLog() {
             const target = document.getElementById('history-ledger-target');
             target.innerHTML = '';
 
-            const uniqueDates = [...new Set(studyLedger.map(l => l.selected_date))].sort((a,b) => b.localeCompare(a));
-
-            if(!uniqueDates.length) {
-                target.innerHTML = `<div class="bg-slate-950 border border-slate-800 rounded-xl p-6 text-slate-500 text-sm text-center">⏱️ History ledger cache tracking log array is currently empty.</div>`;
+            if (!studyLedger.length) {
+                target.innerHTML = `<div class="bg-slate-950 border border-slate-800 rounded-xl p-8 text-center text-sm text-slate-500">No historically committed records detected inside your configuration workspace engine arrays.</div>`;
                 return;
             }
 
-            uniqueDates.forEach(dateStr => {
-                const subSet = studyLedger.filter(l => l.selected_date === dateStr);
-                const inlineWords = subSet.map(s => s.word).join(" | ");
+            // Group workspace records by selected_date sorted backwards
+            const groupedMaps = {};
+            studyLedger.forEach(item => {
+                const d = item.selected_date || 'Legacy/Unknown';
+                if (!groupedMaps[d]) groupedMaps[d] = [];
+                groupedMaps[d].push(item);
+            });
 
-                const details = document.createElement('details');
-                details.className = "bg-slate-950 border border-slate-800 rounded-xl p-3 open:ring-1 open:ring-slate-700 transition group";
-                
-                const summary = document.createElement('summary');
-                summary.className = "text-xs font-semibold text-slate-300 cursor-pointer list-none flex justify-between items-center gap-4 select-none";
-                summary.innerHTML = `
-                    <div class="truncate flex-1">
-                        <span class="font-bold text-white mr-2">📅 ${dateStr}</span>
-                        <span class="text-slate-500">(${subSet.length} items)</span>
-                        <span class="text-slate-600 mx-2">⧁</span>
-                        <span class="text-slate-400 font-mono text-[11px] italic">${inlineWords}</span>
-                    </div>
-                    <span class="text-slate-500 group-open:rotate-180 transition-transform text-[10px]">▼</span>
-                `;
-                details.appendChild(summary);
+            const sortedDates = Object.keys(groupedMaps).sort((x, y) => y.localeCompare(x));
 
-                const grid = document.createElement('div');
-                grid.className = "grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-3 border-t border-slate-900";
+            sortedDates.forEach(dateStr => {
+                const wrapper = document.createElement('div');
+                wrapper.className = "bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-3";
 
-                const categories = ['genki', 'kaishi', 'wanikani'];
-                const titles = ['📘 Genki Pool', '📙 Kaishi 1 Pool', '🐊 WaniKani Pool'];
+                const titleH = document.createElement('h3');
+                titleH.className = "text-xs font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800 pb-2 flex justify-between items-center";
+                titleH.innerHTML = `<span>📅 Production Batch: ${dateStr}</span> <span class="bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-slate-300">${groupedMaps[dateStr].length} elements</span>`;
+                wrapper.appendChild(titleH);
 
-                categories.forEach((cat, idx) => {
-                    const catBlock = document.createElement('div');
-                    catBlock.className = "bg-slate-900/60 p-3 rounded-lg border border-slate-900";
-                    const listMatches = subSet.filter(item => item.source_table.toLowerCase().includes(cat));
-                    
-                    catBlock.innerHTML = `<h4 class="text-xs font-bold text-white mb-2 border-b border-slate-800 pb-1">${titles[idx]} (${listMatches.length})</h4>`;
-                    
-                    if(!listMatches.length) {
-                        catBlock.innerHTML += `<p class="text-[10px] text-slate-600 italic">No items logged</p>`;
-                    } else {
-                        listMatches.forEach(item => {
-                            catBlock.innerHTML += `
-                                <div class="text-xs py-1.5 border-b border-dashed border-slate-800/40 last:border-0">
-                                    <span class="font-bold font-mono text-slate-200 text-sm">${item.word}</span> <span class="text-slate-500 text-[10px]">(${item.reading})</span>
-                                    <p class="text-[11px] text-slate-400 italic">${item.meaning}</p>
-                                </div>
-                            `;
-                        });
-                    }
-                    grid.appendChild(catBlock);
+                const itemsContainer = document.createElement('div');
+                itemsContainer.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1";
+
+                groupedMaps[dateStr].forEach(entry => {
+                    const block = document.createElement('div');
+                    block.className = "bg-slate-900/60 border border-slate-800/80 p-3 rounded-lg flex flex-col justify-between space-y-1";
+                    block.innerHTML = `
+                        <div class="flex items-baseline justify-between gap-2">
+                            <span class="text-lg font-bold font-mono text-white">${entry.word}</span>
+                            <code class="text-[9px] bg-slate-800 text-slate-400 px-1 rounded font-sans">${entry.source_table || 'Direct'}</code>
+                        </div>
+                        <div class="text-xs text-indigo-400 font-mono font-bold truncate">${entry.reading || ''}</div>
+                        <div class="text-xs text-slate-400 font-medium line-clamp-2 pt-0.5 border-t border-slate-800/50 mt-1">${entry.meaning || ''}</div>
+                    `;
+                    itemsContainer.appendChild(block);
                 });
-                details.appendChild(grid);
-                target.appendChild(details);
+
+                wrapper.appendChild(itemsContainer);
+                target.appendChild(wrapper);
             });
         }
     </script>
